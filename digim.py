@@ -8,8 +8,10 @@ from dns.rdatatype import *
 
 
 
-options = {"nlines": 10, "width": 100, "ptr": None}
+lineoptions = {"nlines": 10, "width": 100, "ptr": None}
 
+#def parsevars(domain):
+#    domain=domain
 
 # @click.option('-r', '--record_type')
 def pullrecord(domain, record_type):
@@ -21,7 +23,7 @@ def pullrecord(domain, record_type):
     for answer in answers:
         print 'Host', answer
 
-def digim(domain):
+def getrecords(domain):
     pullrecord(domain, "A")
 #    pullrecord(domain, "cname")
     pullrecord(domain, "mx")
@@ -30,7 +32,7 @@ def digim(domain):
 
 def header(text):
     """Prints a pretty header"""
-    o = options
+    o = lineoptions
     hlen = len(text)
     hline = "".join("-" for i in xrange(o["width"] - hlen - 2)) 
     return "\n%s-%s" % (text, hline)
@@ -110,14 +112,18 @@ def zonerecords(domain):
 #        print e.__class__, e
 #
 
-
 @click.command()
 @click.option('-d', '--domain')
-if __name__ == '__main__':
+def digim(domain):
     print header("hello world")
     print digim(domain)
     print currentwhois(domain)
     print zonerecords(domain)
+
+
+
+if __name__ == '__main__':
+    digim()
 
 
 
