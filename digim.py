@@ -16,9 +16,6 @@ lineoptions = {"nlines": 10, "width": 100, "ptr": None}
 # @click.option('-r', '--record_type')
 def pullrecord(domain, record_type):
     resolver = dns.resolver.Resolver()
-
-#    print 'Checking %s...' % domain
-
     answers = resolver.query(domain, record_type.upper())
     for answer in answers:
         print 'Host', answer
@@ -46,7 +43,7 @@ def currentwhois(domain):
     print "Registrar   %s" % who.registrar
     for ns in who.name_servers:
         print "NameServer  %s" % ns
-    print(who.__dict__)
+    # print(who.__dict__)
 
     print '{0:15} ==> {1:20}'.format('Domain Name', who.name)
 
@@ -113,10 +110,11 @@ def zonerecords(domain):
 #
 
 @click.command()
-@click.option('-d', '--domain')
+@click.option('-d', '--domain', type=str )
 def digim(domain):
+    domain = str(domain)
     print header("hello world")
-    print digim(domain)
+    print getrecords(domain)
     print currentwhois(domain)
     print zonerecords(domain)
 
