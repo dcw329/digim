@@ -11,12 +11,6 @@ from dns.rdatatype import *
 import socket
  
 
-GOOGLE = ['google-public-dns-a.google.com', 'google-public-dns-a.google.com']
-LEVEL3 = ['a.resolvers.level3.net', 'b.resolvers.level3.net', 'c.resolvers.level3.net']
-IMH = ['ns.inmotionhosting.com', 'ns2.inmotionhosting.com']
-WHH = ['ns1.webhostinghub.com', 'ns2.webhostinghub.com']
-
-                
 provider_list = ['level3', 'google', 'inmotionhosting', 'webhostinghub']
 dns_list = ['google-public-dns-a.google.com', 'google-public-dns-a.google.com','a.resolvers.level3.net', 'b.resolvers.level3.net', 'c.resolvers.level3.net','ns.inmotionhosting.com', 'ns2.inmotionhosting.com', 'ns1.webhostinghub.com', 'ns2.webhostinghub.com']
 
@@ -27,11 +21,8 @@ lineoptions = {"nlines": 10, "width": 100, "ptr": None}
 
 #returns 1 answer
 def pull_record(domain, record_type, nameserver):
-#    print nameserver
     resolver = dns.resolver.Resolver()
-#    print resolver.nameservers
     resolver.nameservers = [ str(nameserver) ]
-#    print resolver.nameservers
     try:
         answers = resolver.query(domain, record_type)
     except (dns.resolver.NoAnswer):
@@ -48,7 +39,6 @@ def pull_record(domain, record_type, nameserver):
     return answers[0]
 
 
-
 def is_valid_ipv4_address(address):
     try:
         socket.inet_pton(socket.AF_INET, address)
@@ -62,6 +52,7 @@ def is_valid_ipv4_address(address):
         return False
 
     return True
+
 
 def is_valid_ipv6_address(address):
     try:
@@ -84,24 +75,6 @@ def rdns_for_dns(hostname):
         pass
     
     return ip
-
-# def update_ns_list():
-#     dns_ns_list = ['dns.google.com', 'ns.inmotionhosting.com', 'a.resolvers.level3.net', '8.8.8.8']
-#     ns_to_ips = []
-#     for prvdr in dns_ns_list:
-#         ns_to_ips.append(rdns_for_dns(prvdr))
-        
-#     return ns_to_ips
-        
-        
-
-# def get_google_dns(domain)
-#     print "@google-public-dns-a: %s [ PTR: %s ] " \
-#         % pullrecord(domain, "A", 8.8.8.8) \ 
-#         pullrecord(domain, "PTR", 8.8.8.8)
-#     print "@google-public-dns-b: %s [ PTR: %s ] " \
-#         % pullrecord(domain, "A", 8.8.4.4) \ 
-#         pullrecord(domain, "PTR", 8.8.4.4)
 
 
 def header(text):
@@ -155,7 +128,9 @@ def pull_ptr(ip):
 def get_a_records(domain):
     for provider in provider_list:
         print "%s's Public DNS:" % provider
-# ['print/output' item 'while running through a for loop for' for item in dns_list 'and if statement is true due to' if provider in item 'go back to the beginning']
+        # ['print/output' item 'while running through a for loop for' 
+        # for item in dns_list 'and if statement is true due to' 
+        # if provider in item 'go back to the beginning']
         for nameserver in [item.lower() for item in dns_list if provider.lower() in item.lower()]:
             thea = pull_record(domain, "A",  rdns_for_dns(nameserver))
             if thea != "REFUSED":
@@ -166,30 +141,25 @@ def get_a_records(domain):
             else:
                 ptr = thea
                 serial = thea
-            print "  %s: %s [ PTR: %s ] " % (
-                                        nameserver,        
-                                        thea,
-                                        ptr
-                                        )
+            print "  %s: %s [ PTR: %s ] " % (nameserver, thea, ptr)
             print "    > Serial: %s " % serial
-
+        print ""
     return 0
         
 
 #@click.command()
 #@click.option('-d', '--domain', type=str )
 def digim(domain):
-    domain = str('dcwtest.com')
-    print header("Propagation")
-    print get_a_records(domain)
-
+    domain = str('daniels.tools')
     print header("Current Whois")
-    print currentwhois(domain)
+    currentwhois(domain)
 
     print header("Zone Records")
-    print zonerecords(domain)
+    zonerecords(domain)
 
-#    print getrecords(domain)
+    print header("Propagation")
+    get_a_records(domain)
+
 
 
 if __name__ == '__main__':
