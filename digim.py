@@ -18,33 +18,35 @@ WHH = ['ns1.webhostinghub.com', 'ns2.webhostinghub.com']
 
                 
 provider_list = ['level3', 'google', 'inmotionhosting', 'webhostinghub']
-master_list = ['google-public-dns-a.google.com', 'google-public-dns-a.google.com','a.resolvers.level3.net', 'b.resolvers.level3.net', 'c.resolvers.level3.net','ns.inmotionhosting.com', 'ns2.inmotionhosting.com', 'ns1.webhostinghub.com', 'ns2.webhostinghub.com']
+dns_list = ['google-public-dns-a.google.com', 'google-public-dns-a.google.com','a.resolvers.level3.net', 'b.resolvers.level3.net', 'c.resolvers.level3.net','ns.inmotionhosting.com', 'ns2.inmotionhosting.com', 'ns1.webhostinghub.com', 'ns2.webhostinghub.com']
 
 
 
 lineoptions = {"nlines": 10, "width": 100, "ptr": None}
 
 
-
+#returns 1 answer
 def pull_record(domain, record_type, nameserver):
+#    print nameserver
     resolver = dns.resolver.Resolver()
-    resolver.nameservers = list(str(nameserver)) 
+#    print resolver.nameservers
+    resolver.nameservers = [ str(nameserver) ]
+#    print resolver.nameservers
     try:
-        answers = resolver.query(domain, record_type.upper())
+        answers = resolver.query(domain, record_type)
     except (dns.resolver.NoAnswer):
         try:
             answers = dns.query.udp(domain, nameserver)
         except (dns.resolver.NoAnswer):
             raise dns.resolver.NoAnswer
-    for answer in answers:
-        print 'Host', answer
+    # When there is no record in our nameservers, they
+    # return an rcode=REFUSED . This removes the nameserver
+    # from the list in resolver.nameservers raising a 
+    # return of NoNameserver. Handle this as no record later
+    except (dns.resolver.NoNameservers):
+        return "REFUSED"
+    return answers[0]
 
-
-def get_records(domain):
-    pull_record(domain, "A", '8.8.8.8')
-    pull_record(domain, "CNAME", '8.8.8.8')
-    pull_record(domain, "MX", '8.8.8.8')
-    pull_record(domain, "NS", '8.8.8.8')
 
 
 def is_valid_ipv4_address(address):
@@ -84,9 +86,9 @@ def rdns_for_dns(hostname):
     return ip
 
 # def update_ns_list():
-#     master_ns_list = ['dns.google.com', 'ns.inmotionhosting.com', 'a.resolvers.level3.net', '8.8.8.8']
+#     dns_ns_list = ['dns.google.com', 'ns.inmotionhosting.com', 'a.resolvers.level3.net', '8.8.8.8']
 #     ns_to_ips = []
-#     for prvdr in master_ns_list:
+#     for prvdr in dns_ns_list:
 #         ns_to_ips.append(rdns_for_dns(prvdr))
         
 #     return ns_to_ips
@@ -142,30 +144,49 @@ def pull_serial(domain, nameserver):
     resolver = dns.resolver.Resolver()
     resolver.nameservers = list(str(nameserver))
     answer = dns.resolver.query(domain, 'SOA')
-    return answer.serial
+    return answer[0].serial
+
+
+def pull_ptr(ip):
+    resolver = dns.resolver.Resolver()
+    return str(resolver.query(ip,"PTR")[0])
 
 
 def get_a_records(domain):
     for provider in provider_list:
         print "%s's Public DNS:" % provider
-# ['print/output' item 'while running through a for loop for' for item in master_list 'and if statement is true due to' if provider in item 'go back to the beginning']
-        for nameserver in [item.lower() for item in master_list if provider.lower() in item.lower()]:
-            print "%s: %s [ PTR: %s ] " % (
+# ['print/output' item 'while running through a for loop for' for item in dns_list 'and if statement is true due to' if provider in item 'go back to the beginning']
+        for nameserver in [item.lower() for item in dns_list if provider.lower() in item.lower()]:
+            thea = pull_record(domain, "A",  rdns_for_dns(nameserver))
+            if thea != "REFUSED":
+                thea = str(thea)
+                addr = dns.reversename.from_address(thea)
+                ptr = pull_ptr(addr)
+                serial = pull_serial(domain, rdns_for_dns(nameserver))
+            else:
+                ptr = thea
+                serial = thea
+            print "  %s: %s [ PTR: %s ] " % (
                                         nameserver,        
-                                        pull_record(domain, "A", rdns_for_dns(nameserver)), 
-                                        pull_record(domain, "PTR", rdns_for_dns(nameserver))
+                                        thea,
+                                        ptr
                                         )
-            print "     > Serial: %s " % pull_serial(domain, rdns_for_dns(nameserver))
+            print "    > Serial: %s " % serial
 
+    return 0
         
 
 #@click.command()
 #@click.option('-d', '--domain', type=str )
 def digim(domain):
     domain = str('dcwtest.com')
-    print header("hello world")
+    print header("Propagation")
     print get_a_records(domain)
-#    print currentwhois(domain)
+
+    print header("Current Whois")
+    print currentwhois(domain)
+
+    print header("Zone Records")
     print zonerecords(domain)
 
 #    print getrecords(domain)
